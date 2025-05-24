@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.164.0/build/three.module.js",
+          "threex": "./path/to/ar-threex.mjs"
+        }
+      }
+    </script>
+  </head>
+
+  <body>
+    <a-scene
+      mindar-image="imageTargetSrc: ./markers/targets(5).mind;"
+      vr-mode-ui="enabled: false"
+      color-space="sRGB"
+      renderer="colorManagement: true, physicallyCorrectLights"
+      device-orientation-permission-ui="enabled: false"
+    >
+      <div
+        id="unmute-message"
+        style="
+          display: none;
+          position: fixed;
+          top: 20px;
+          left: 0;
+          right: 0;
+          text-align: center;
+          z-index: 1000;
+          background: #222;
+          color: #fff;
+          padding: 10px;
+        "
+      >
+        Click anywhere to enable sound
+      </div>
+
+      <a-assets id="assets">
+        <video
+          id="video0"
+          src="./media/soccer.mp4"
+          playsinline
+          muted="true"
+          crossorigin
+        ></video>
+        <video
+          id="video1"
+          src="./media/basketball.mp4"
+          playsinline
+          muted="true"
+          crossorigin
+        ></video>
+      </a-assets>
+
+      <a-light type="ambient" color="#fff" intensity="1"></a-light>
+      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+      <a-entity mindar-image-target="targetIndex: 0">
+        <a-plane
+          src="#video0"
+          position="0 0 0.1"
+          width="1"
+          height="1"
+          rotation="0 0 0"
+        ></a-plane>
+      </a-entity>
+
+      <a-entity mindar-image-target="targetIndex: 1">
+        <a-plane
+          src="#video1"
+          position="0 0 0.1"
+          width="1"
+          height="1"
+          rotation="0 0 0"
+        ></a-plane>
+      </a-entity>
+    </a-scene>
+
+    <script type="module">
+      const markers = ["soccer", "basketball"];
+      document.addEventListener("DOMContentLoaded", function () {
+        const unmuteMessage = document.getElementById("unmute-message");
+        let needsUnmute = false;
+
+        markers.forEach((marker, i) => {
+          const video = document.getElementById(`video${i}`);
+          const entity = document.querySelectorAll(
+            "a-entity[mindar-image-target]"
+          )[i];
+
+          video.addEventListener("loadeddata", () => {
+            if (video.muted) {
+              unmuteMessage.style.display = "block";
+              needsUnmute = true;
+            }
+          });
+
+          entity.addEventListener("targetFound", () => {
+            console.log(`Marker ${i} found`);
+            video.play();
+          });
+          entity.addEventListener("targetLost", () => {
+            console.log(`Marker ${i} lost`);
+            video.pause();
+          });
+        });
+
+        window.addEventListener(
+          "click",
+          () => {
+            if (needsUnmute) {
+              markers.forEach((marker, i) => {
+                const video = document.getElementById(`video${i}`);
+                if (video) {
+                  video.muted = false;
+                }
+              });
+              unmuteMessage.style.display = "none";
+              needsUnmute = false;
+            }
+          },
+          { once: true }
+        );
+      });
+    </script>
+  </body>
+</html>
